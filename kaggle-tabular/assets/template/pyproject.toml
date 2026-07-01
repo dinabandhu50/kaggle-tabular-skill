@@ -1,0 +1,28 @@
+[project]
+name = "{{COMP_NAME}}"
+version = "0.1.0"
+description = "Kaggle tabular competition — kaggle-tabular skill workflow"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "scikit-learn",
+    "lightgbm",
+    "xgboost",
+    "catboost",
+    "optuna",
+    "kaggle",
+    "pyyaml",
+    "matplotlib",
+    "wandb",
+    # small-data foundation model + automl (optional but recommended diversity):
+    # "tabpfn",
+    # "autogluon.tabular",
+]
+
+# GPU note: if scaffolded with --gpu, install the RAPIDS stack (cudf-cu12, cuml-cu12) per your
+# CUDA version and enable device_type="gpu" in the model wrappers.
+
+[tool.uv]
+package = false

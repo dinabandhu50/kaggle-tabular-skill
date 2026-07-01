@@ -1,0 +1,7 @@
+# Phase 1: frozen once, reused everywhere (HR-2).
+scheme: stratified      # stratified | kfold | group | time  (choose by TEST structure)
+n_folds: 5
+seed: 42
+target_col: target
+group_col: null         # set for scheme=group (e.g. user_id)
+time_col: null          # set for scheme=time

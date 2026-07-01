@@ -1,0 +1,17 @@
+# data & artifacts (regenerable)
+data/raw/
+data/processed/
+oof/
+preds/
+wandb/
+*.npy
+# but DO commit the ledger and folds — they are the memory of the run
+!experiments/ledger.parquet
+!data/folds.parquet
+# env / secrets
+.venv/
+.envrc.local
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store

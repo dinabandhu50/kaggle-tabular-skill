@@ -1,0 +1,51 @@
+# Competition task runner. `just <recipe>`. Phases gate left-to-right.
+set dotenv-load := true
+
+comp := "{{COMP_NAME}}"
+
+# --- Phase 0: setup & ingestion ---
+setup:
+    uv sync
+    @echo "env ready. Put Kaggle creds in .envrc, then: just download"
+
+download:
+    kaggle competitions download -c {{comp}} -p data/raw
+    cd data/raw && unzip -o '*.zip'
+
+# --- Phase 1: validation harness (build FIRST) ---
+folds:
+    uv run python -m scripts.make_folds      # writes data/folds.parquet (HR-2)
+
+adval:
+    uv run python -m scripts.adversarial     # logs train/test shift AUC
+
+# --- Phase 2: EDA ---
+eda:
+    uv run python -m scripts.eda             # writes EDA_FINDINGS.md
+
+# --- Phase 3: diverse baselines (run in parallel) ---
+baseline model="lgbm":
+    uv run python -m scripts.baseline --model {{model}}
+
+# --- Phase 4: feature engineering loop ---
+fe model="lgbm" group="":
+    uv run python -m scripts.fe --model {{model}} --group {{group}}
+
+# --- Phase 5: light tuning ---
+tune model="lgbm":
+    uv run python -m scripts.tune --model {{model}} --trials 30
+
+# --- Phase 6: ensembling ---
+ensemble:
+    uv run python -m scripts.ensemble        # hill climb + stack over kept OOFs
+
+# --- Phase 7: final mile + submit ---
+submit spec="best":
+    uv run python -m scripts.submit --spec {{spec}}
+
+# --- always available ---
+audit exp:
+    uv run python -m scripts.audit --exp {{exp}}   # Guardian: kept | rejected:<reason>
+
+summary:
+    uv run python -m scripts.summary               # what's working, from the ledger
