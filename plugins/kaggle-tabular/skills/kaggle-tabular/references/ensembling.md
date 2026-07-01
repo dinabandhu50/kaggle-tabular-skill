@@ -58,3 +58,36 @@ Use the strong ensemble to label unlabeled/test data, fold those labels back int
 - **Lock submissions by CV.** Choose the final pair by CV, not public LB (see `orchestration.md` →
   CV–LB contract): typically (1) the best-CV ensemble and (2) a lower-variance / more conservative
   blend to hedge a shake-up.
+
+## Ensembling ladder (in order)
+
+1. **Build a diverse OOF library** — 20–150 OOFs from model × feature-set × seed. 5 seeds × N variants is cheap diversity. (`src/ensemble.py::average_seeds`.)
+2. **Deduplicate** — drop one of any pair with OOF Pearson correlation > 0.9999. (`src/ensemble.py::dedup_oofs`.)
+3. **Prefer multi-seed averages** as ensemble members over single-seed OOFs (cleaner signal).
+4. **Subset selection** — Optuna over which OOFs to include, maximizing the CV metric of a Ridge/Logistic combo; ~10% of OOFs typically survive. Optional forward-selection + backward-elimination for stability at small counts.
+5. **Rank transform** (recommended) — replace probabilities with `rankdata/n` before blending to erase calibration differences between GBDTs and NNs. (`src/ensemble.py::rank_transform`.)
+6. **Hill climbing in logit space with negative weights** — blend `logit(clip(oof))`, greedily add members (negative weights allowed to subtract correlated noise), stop on tolerance 1e-7 or max iters, output `expit(sum)`. (`src/ensemble.py::hill_climb_logit`.)
+
+### Meta-model choice
+
+| Meta-model | When |
+|---|---|
+| Ridge | default; 10+ selected OOFs |
+| Logistic | binary classification; add `C` tuning |
+| Small NN | only after aggressive dedup (≤ ~6 inputs) |
+
+## Full-data refit + final decision (Phase 7)
+
+- Record avg `best_iteration` across folds; retrain on 100% of train at `int(avg_best_iter * 1.25)` rounds, averaged over ~20 seeds. More data → afford slightly more rounds. (`src/finalize.py::full_data_refit`.)
+- **Decide by the CV–LB relation, not the single best CV** (see hard-rules.md → CV–LB gap). Submit intermediate ensembles throughout to map the slope; pick from the still-positive-slope range.
+- Lock **two** submissions: the best-trustworthy-CV blend and a conservative/lower-variance fallback to hedge a shake-up.
+
+## Ensembling anti-patterns
+
+| Anti-pattern | Why it fails |
+|---|---|
+| Simple average of all OOFs | dilutes signal with redundant members |
+| One model given 65%+ weight | overfits OOF, collapses on LB |
+| Nonlinear stacking without aggressive OOF selection | overfits the stacked OOFs |
+| Hill climbing without a CV guard | CV climbs, LB doesn't follow |
+| Selecting the ensemble on public LB | HR-5 violation |
