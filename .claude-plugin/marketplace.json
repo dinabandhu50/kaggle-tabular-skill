@@ -1,0 +1,11 @@
+{
+  "name": "kaggle-tabular-marketplace",
+  "owner": { "name": "Dinabandhu Behera" },
+  "plugins": [
+    {
+      "name": "kaggle-tabular",
+      "source": "./plugins/kaggle-tabular",
+      "description": "Grandmaster-grade validation-first workflow for solo tabular Kaggle competitions."
+    }
+  ]
+}
