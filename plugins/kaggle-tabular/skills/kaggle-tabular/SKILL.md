@@ -101,6 +101,11 @@ the rules so agents can't easily violate them:
 - `src/models/base.py` — `run_experiment(...)` that loads the frozen folds, runs CV, saves
   `oof/` + `preds/`, and appends a ledger row. **Using this is how HR-2/HR-4 are enforced.**
 - `src/ensemble.py` — hill climbing + stacking over the OOF ledger.
+- `src/features.py` — leak-safe FE helpers (in-fold target/frequency encoding, ALL_CATS, quantile
+  bins, digit features, categorical interactions) — call these INSIDE `fit_fold` (HR-1).
+- `src/finalize.py` — Phase-7 full-data refit at 1.25× best_iteration over many seeds.
+- `src/models/{lgbm,xgb,cat,logreg}.py` — four ready `fit_fold` wrappers; `logreg.py` is also the
+  Phase-2 linearity probe.
 - `justfile`, `configs/`, `AGENTS.md`, `COMPETITION.md`.
 
 Agents should build every model through `run_experiment(...)` rather than hand-rolling CV loops.

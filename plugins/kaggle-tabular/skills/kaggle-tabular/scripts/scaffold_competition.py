@@ -33,14 +33,25 @@ def substitute(path: Path, comp: str) -> None:
 
 
 def enable_gpu(dest: Path) -> None:
-    """Uncomment GPU toggles in the model wrappers."""
-    lgbm = dest / "src" / "models" / "lgbm.py"
-    if lgbm.exists():
-        t = lgbm.read_text().replace(
+    """Uncomment GPU toggles in the model wrappers (exact commented markers -> live lines)."""
+    swaps = {
+        "src/models/lgbm.py": (
             '        # device_type="gpu",  # uncomment if scaffolded with --gpu',
             '        device_type="gpu",',
-        )
-        lgbm.write_text(t)
+        ),
+        "src/models/xgb.py": (
+            '        # device="cuda",  # uncomment if scaffolded with --gpu',
+            '        device="cuda",',
+        ),
+        "src/models/cat.py": (
+            '        # task_type="GPU",  # uncomment if scaffolded with --gpu',
+            '        task_type="GPU",',
+        ),
+    }
+    for rel, (old, new) in swaps.items():
+        p = dest / rel
+        if p.exists():
+            p.write_text(p.read_text().replace(old, new))
 
 
 def main() -> None:
