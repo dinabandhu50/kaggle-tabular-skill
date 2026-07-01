@@ -65,6 +65,16 @@ Run at Phase 1, and re-run whenever CV and LB disagree. It answers: *can I trust
 
 `src/cv.py` ships an `adversarial_validation()` implementation.
 
+### Adversarial-AUC interpretation (action table)
+
+| AUC | Meaning | Action |
+|---|---|---|
+| ≈ 0.500 | train/test drawn alike, no drift | random K-fold trustworthy; global statistics *may* be usable as features (carefully) |
+| 0.510–0.550 | minor drift | in-fold encoding only; inspect the top shifted features |
+| > 0.550 | significant shift | feature-level analysis required; prefer time/group folds; weight rows by test-likeness; external data risky |
+
+> Evidence: all S6E2 top solutions ran adversarial validation (AUC ≈ 0.5017 ± 0.0013 — a near-perfect match), which is what licensed safely merging external target statistics.
+
 ## CV scheme selection (Phase 1)
 
 Choose by **test structure**, not habit:
@@ -90,3 +100,13 @@ Default `n_folds = 5`. Use more for small/noisy data (better estimate), fewer fo
 - Multi-level stacks where a level doesn't beat the prior level on OOF.
 - Experiments not saved to the ledger.
 - Heavy GBDT tuning before feature engineering has plateaued (wrong ROI order).
+
+## CV–LB gap tracking (reject overfitting experiments)
+
+The CV↔public-LB relationship is a leakage/overfitting sensor, used within HR-5 (never *select* on the LB):
+
+- Log `lb_public` next to `cv_score` for every submitted experiment (the ledger has the column).
+- Track the gap `cv_score − lb_public`. A **stable** gap = healthy; a **widening** gap = the experiment is fitting split-specific noise → reject it even if CV improved.
+- Choose final submissions from the range where the CV→LB slope was still positive, not the single highest CV.
+
+> Evidence (S6E2, 4th place): experiments were rejected once `CV − Public LB` widened past its healthy band (~0.00190 vs a healthy ~0.00185). 1st place's chosen submission had *lower* CV than their best-CV submission but higher private LB — the CV–LB relation, not raw CV, made the call.

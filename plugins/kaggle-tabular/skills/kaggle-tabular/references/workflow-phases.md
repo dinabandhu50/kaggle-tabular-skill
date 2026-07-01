@@ -23,6 +23,7 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
   2. Choose the fold scheme by test structure (see `hard-rules.md` → "CV scheme selection").
   3. Run **adversarial validation** (`src/cv.py`); log the AUC and any shifted features.
   4. Freeze folds → `data/folds.parquet` (HR-2). Decide `n_folds`.
+  5. Record the adversarial-AUC band (see `hard-rules.md` → interpretation table) in `COMPETITION.md`; it drives the encoding strategy (global vs strictly in-fold).
 - **Gate:** metric reproduces LB to tolerance; folds persisted; adversarial-validation AUC logged;
   `COMPETITION.md` CV decision upgraded from hypothesis to confirmed.
 - **Owner:** Validation Guardian (the role that polices HR-1/HR-2/HR-7 for the rest of the run).
@@ -97,7 +98,7 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
 ## Phase 7 — Final-mile strengthening
 - **Goal:** squeeze the last reliable gains and lock submissions.
 - **Actions (each low-risk, additive):** seed-ensembling (retrain over many seeds, average);
-  retrain on 100% of data once features/params are frozen; optional pseudo-labeling per
+  retrain on 100% of data at ~1.25× the average best_iteration across folds, averaged over ~20 seeds (see ensembling.md → full-data refit); optional pseudo-labeling per
   `ensembling.md` (respecting HR-1 across folds).
 - **Gate:** final two submissions chosen **by CV** (see `orchestration.md` → CV–LB contract);
   reproducible end-to-end via `just submit`.
