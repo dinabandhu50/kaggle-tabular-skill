@@ -1,0 +1,13 @@
+{
+  "name": "kaggle-tabular",
+  "version": "0.1.0",
+  "description": "Grandmaster-grade, validation-first workflow for solo tabular Kaggle competitions. Cross-harness skill (Claude Code / Codex / OpenCode).",
+  "type": "module",
+  "main": ".opencode/plugins/kaggle-tabular.js",
+  "keywords": ["skills", "kaggle", "tabular", "feature-engineering", "ensembling", "gbdt", "competition"],
+  "license": "MIT",
+  "author": "Dinabandhu Behera",
+  "pi": {
+    "skills": ["./skills"]
+  }
+}

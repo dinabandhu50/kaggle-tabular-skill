@@ -13,15 +13,19 @@ Two products:
 
 There is no build/lint/test step — this is Markdown + a template. Do not add tests (per project norms, correctness is model performance, not unit tests).
 
-### Plugin packaging
+### Plugin packaging (root-is-plugin, like superpowers)
 
-The repo root is a Claude plugin **marketplace** (`.claude-plugin/marketplace.json`) exposing one
-plugin at `plugins/kaggle-tabular/` (`.claude-plugin/plugin.json`), whose skill lives at
-`plugins/kaggle-tabular/skills/kaggle-tabular/`. Install with
-`claude plugin marketplace add <repo>` → `claude plugin install kaggle-tabular`, or run
-`plugins/kaggle-tabular/install.sh` to also wire Codex and OpenCode. See
-`plugins/kaggle-tabular/USAGE.md`. Paths shown in the sections below are relative to the skill
-directory `plugins/kaggle-tabular/skills/kaggle-tabular/`.
+The repo root **is** the plugin. Per-harness manifests live at the root:
+- `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json` (source `./`) — Claude Code.
+- `.codex-plugin/plugin.json` (`skills: ./skills/`) — Codex; the skill is also symlinked into
+  `~/.codex/skills/` for native discovery.
+- `.opencode/plugins/kaggle-tabular.js` + `.opencode/INSTALL.md` + root `package.json` — OpenCode; the
+  plugin's `config` hook registers `skills/` into `config.skills.paths`.
+
+The skill itself lives at `skills/kaggle-tabular/` (`SKILL.md`, `references/`, `scripts/`, `assets/`).
+Install everywhere with `install.sh` (Claude marketplace install + Codex symlink + OpenCode plugin
+registration), or per-harness per `USAGE.md` / `.opencode/INSTALL.md`. Paths shown in the sections
+below are relative to the skill directory `skills/kaggle-tabular/`.
 
 ## The `kaggle-tabular` skill — architecture
 

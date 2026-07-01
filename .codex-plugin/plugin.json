@@ -1,0 +1,16 @@
+{
+  "name": "kaggle-tabular",
+  "version": "0.1.0",
+  "description": "Grandmaster-grade, validation-first workflow for solo tabular Kaggle competitions: leakage hard-rules, a gated 8-phase loop, an OOF artifact contract, a scaffolder + rule-encoding template, and multi-agent orchestration.",
+  "author": { "name": "Dinabandhu Behera" },
+  "license": "MIT",
+  "keywords": ["kaggle", "tabular", "cross-validation", "feature-engineering", "ensembling", "gbdt", "competition"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Kaggle Tabular",
+    "shortDescription": "Validation-first workflow for solo tabular Kaggle competitions",
+    "longDescription": "Grandmaster-grade discipline for tabular competitions: trustworthy CV first, diverse baselines, hypothesis-driven feature engineering, light tuning, and serious ensembling — every experiment emits OOF + test preds + a ledger row under frozen folds.",
+    "category": "Coding",
+    "capabilities": ["Interactive", "Read", "Write"]
+  }
+}

@@ -1,0 +1,9 @@
+# SDD scratch (task briefs, reports, review diffs, progress ledger)
+.superpowers/
+
+# OpenCode local install artifacts (if the plugin is developed in place)
+node_modules/
+
+# OS / editor cruft
+.DS_Store
+*.swp
