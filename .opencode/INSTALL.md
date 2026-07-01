@@ -20,7 +20,7 @@ Add this repo's path (or a git spec) to the `plugin` array in your
 Or from GitHub once pushed:
 
 ```jsonc
-{ "plugin": ["kaggle-tabular@git+https://github.com/<you>/kaggle-tabular.git"] }
+{ "plugin": ["kaggle-tabular@git+https://github.com/dinabandhu50/kaggle-tabular-skill.git"] }
 ```
 
 Restart OpenCode. Verify with the native skill tool:
