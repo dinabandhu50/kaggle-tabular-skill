@@ -2,7 +2,8 @@
 
 Once features and params are frozen, retrain on 100% of train at ~1.25x the average per-fold
 best_iteration, averaged over many seeds. More data -> examples seen proportionally fewer times ->
-afford slightly more rounds. Evidence: 1st-place S6E2 beat K-fold averaging with 1.25x + 20 seeds.
+afford slightly more rounds. Evidence: top tabular solutions beat K-fold averaging with a ~1.25x
+best-iteration, ~20-seed refit.
 """
 from __future__ import annotations
 

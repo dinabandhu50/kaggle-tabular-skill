@@ -25,8 +25,8 @@ EOF
 
 echo "== Claude Code =="
 if command -v claude >/dev/null 2>&1; then
-  run "claude plugin marketplace add '$REPO_ROOT'"
-  run "claude plugin install kaggle-tabular@kaggle-tabular-marketplace"
+  run "claude plugin marketplace add '$REPO_ROOT' || echo '  (marketplace add returned non-zero — continuing)'"
+  run "claude plugin install kaggle-tabular@kaggle-tabular-marketplace || echo '  (plugin install returned non-zero — continuing)'"
 else
   echo "  claude CLI not found — skipping (install manually: claude plugin marketplace add '$REPO_ROOT')"
 fi
