@@ -121,6 +121,8 @@ Agents should build every model through `run_experiment(...)` rather than hand-r
 - `references/orchestration.md` — multi-agent role map (incl. the adversarial Validation Guardian),
   drop-in agent prompt patterns, filesystem-based coordination, and the CV–LB contract for final
   submission selection. **Read when planning parallel agents or selecting final submissions.**
+- `references/what-works.md` — evidence-backed cross-cutting patterns and the "what does NOT work"
+  table. **Load for a fast prior before committing effort in any phase.**
 
 ## One-line summary
 
