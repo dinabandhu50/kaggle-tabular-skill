@@ -8,10 +8,20 @@ This is **not** a competition entry — it is the **authoring workspace for a po
 
 Two products:
 
-- **`kaggle-tabular/`** — a self-contained, cross-harness (Claude Code / Codex / OpenCode) skill: a grandmaster-grade, validation-first workflow for solo tabular Kaggle competitions. This is the deliverable.
+- **`plugins/kaggle-tabular/`** — a self-contained, cross-harness (Claude Code / Codex / OpenCode) skill: a grandmaster-grade, validation-first workflow for solo tabular Kaggle competitions. This is the deliverable.
 - **`learnings/`** — distilled research: top-solution write-ups (S6E2), a prioritized action-item roadmap, and the user's own data-science framework (`my-pipeline.md`). Source material that informs the skill.
 
-There is no git repository initialized here yet, and no build/lint/test step — this is Markdown + a template. Do not add tests (per project norms, correctness is model performance, not unit tests).
+There is no build/lint/test step — this is Markdown + a template. Do not add tests (per project norms, correctness is model performance, not unit tests).
+
+### Plugin packaging
+
+The repo root is a Claude plugin **marketplace** (`.claude-plugin/marketplace.json`) exposing one
+plugin at `plugins/kaggle-tabular/` (`.claude-plugin/plugin.json`), whose skill lives at
+`plugins/kaggle-tabular/skills/kaggle-tabular/`. Install with
+`claude plugin marketplace add <repo>` → `claude plugin install kaggle-tabular`, or run
+`plugins/kaggle-tabular/install.sh` to also wire Codex and OpenCode. See
+`plugins/kaggle-tabular/USAGE.md`. Paths shown in the sections below are relative to the skill
+directory `plugins/kaggle-tabular/skills/kaggle-tabular/`.
 
 ## The `kaggle-tabular` skill — architecture
 
