@@ -32,3 +32,10 @@ scale. Pick for both *strength* and *decorrelation* (Phase 6 rewards diversity).
   subsample (random or K-Means cluster-representative) or skip it as a member.
 - Keep GPU vs CPU consistent with how the repo was scaffolded (`--gpu` toggles RAPIDS/cuDF/cuML and
   GPU GBDT backends). GPU mainly buys throughput, which buys more experiments.
+
+## Signal-shape heuristics (run before heavy FE)
+
+- **Run Logistic/Linear + one-hot FIRST as a linearity probe.** If it is competitive with the GBDT baseline, the signal is near-linear → prefer **shallow GBDTs (depth 2–3 / few leaves)**, favor diversity over depth, and go easy on aggressive FE. If it is far behind → non-linear signal dominates → deeper trees + aggressive interactions/FE. (`src/models/logreg.py` doubles as this probe.)
+- **Best neural member:** RealMLP (`pytabkit`, `n_ens≈8`, metric `1-auc_ovr`) is the strongest single neural model on tabular and decorrelates the GBDT blend; add it for diversity once GBDTs plateau.
+
+> Evidence (S6E2): LogReg+OHE reached 0.95550 CV — near the GBDT baseline — which correctly signaled a near-linear problem and made depth-2 stumps the right default.
