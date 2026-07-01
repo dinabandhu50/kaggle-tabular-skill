@@ -10,6 +10,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.special import expit, logit
+from scipy.stats import rankdata
 
 from . import ledger
 from .metric import GREATER_IS_BETTER, competition_metric, is_improvement
@@ -114,3 +116,51 @@ def save_spec(path, *, method, members, weights=None, meta_kind=None, oof_score=
         "weight": weights if weights is not None else [None] * len(members),
     }).to_csv(path, index=False)
     print(f"[ensemble] method={method} meta={meta_kind} OOF={oof_score} -> {path}")
+
+
+def rank_transform(a: np.ndarray) -> np.ndarray:
+    """Column-wise rank normalization to [0,1]; erases cross-family calibration differences."""
+    a = np.asarray(a, dtype=float)
+    if a.ndim == 1:
+        return rankdata(a) / len(a)
+    return np.column_stack([rankdata(a[:, j]) / a.shape[0] for j in range(a.shape[1])])
+
+
+def dedup_oofs(ids: list[str], oof: np.ndarray, test: np.ndarray, *, thresh: float = 0.9999):
+    """Drop one member from each pair with Pearson correlation > thresh. Returns (ids, oof, test)."""
+    keep, corr = [], np.corrcoef(oof.T)
+    for j in range(oof.shape[1]):
+        if all(abs(corr[j, k]) <= thresh for k in keep):
+            keep.append(j)
+    return [ids[j] for j in keep], oof[:, keep], test[:, keep]
+
+
+def average_seeds(oofs: list[np.ndarray], tests: list[np.ndarray]):
+    """Average a group of same-config, different-seed OOF/test arrays into one cleaner member."""
+    return np.mean(oofs, axis=0), np.mean(tests, axis=0)
+
+
+def hill_climb_logit(oof: np.ndarray, test: np.ndarray, y: np.ndarray, *,
+                     n_iter: int = 1000, tol: float = 1e-7, allow_negative: bool = True):
+    """Greedy blend in logit space; supports negative weights (subtract correlated noise).
+
+    Returns (weights[n_models], oof_blend_prob, test_blend_prob). Blends logits, outputs probs.
+    """
+    eps = 1e-7
+    z_oof = logit(np.clip(oof, eps, 1 - eps))
+    z_test = logit(np.clip(test, eps, 1 - eps))
+    n = oof.shape[1]
+    w = np.zeros(n)
+    steps = [0.05, -0.05] if allow_negative else [0.05]
+    best = -np.inf if GREATER_IS_BETTER else np.inf
+    for _ in range(n_iter):
+        improved = False
+        for j in range(n):
+            for s in steps:
+                w2 = w.copy(); w2[j] += s
+                score = competition_metric(y, expit(z_oof @ w2))
+                if is_improvement(score, best) and abs(score - best) > tol:
+                    w, best, improved = w2, score, True
+        if not improved:
+            break
+    return w, expit(z_oof @ w), expit(z_test @ w)
