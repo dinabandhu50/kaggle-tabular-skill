@@ -15,9 +15,10 @@ from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
+from tqdm.auto import tqdm
 
-from .. import ledger
-from ..metric import cv_score
+from .. import ledger, tracking
+from ..metric import competition_metric, cv_score
 
 # fit_fold(X_tr, y_tr, X_val, X_test, fold, seed) -> (val_pred, test_pred_for_this_fold, model)
 FitFold = Callable[[pd.DataFrame, np.ndarray, pd.DataFrame, pd.DataFrame, int, int], tuple]
@@ -54,7 +55,8 @@ def run_experiment(
     test_pred = np.zeros(len(test), dtype=float)
     fold_ids = [f for f in sorted(np.unique(folds)) if f >= 0]
 
-    for f in fold_ids:
+    pbar = tqdm(fold_ids, desc=exp_id, unit="fold")
+    for f in pbar:
         tr_idx = np.where(folds != f)[0]
         va_idx = np.where(folds == f)[0]
         # NOTE (HR-1): fit_fold must fit every target-aware/cross-row transform on tr rows only.
@@ -63,6 +65,7 @@ def run_experiment(
         )
         oof[va_idx] = val_pred
         test_pred += np.asarray(test_pred_f, dtype=float) / len(fold_ids)
+        pbar.set_postfix(fold_score=f"{competition_metric(y[va_idx], val_pred):.5f}")
 
     scores = cv_score(oof, y, folds)
 
@@ -87,6 +90,7 @@ def run_experiment(
         "notes": notes,
     }
     ledger.append_row(ledger_path, row)
+    tracking.log_run(exp_id, model_family, scores, config)
 
     print(f"[{exp_id}] {model_family}  CV={scores['cv_score']:.6f}  "
           f"±{scores['cv_std']:.6f}  folds={scores['cv_fold_scores']}")

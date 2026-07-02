@@ -17,7 +17,7 @@ def make_fit_fold(params: dict | None = None, task: str = "classification"):
 
     def fit_fold(X_tr: pd.DataFrame, y_tr: np.ndarray, X_val: pd.DataFrame,
                  X_test: pd.DataFrame, fold: int, seed: int):
-        cat_cols = [c for c in X_tr.columns if str(X_tr[c].dtype) in ("object", "category")]
+        cat_cols = [c for c in X_tr.columns if pd.api.types.is_string_dtype(X_tr[c])]
         num_cols = [c for c in X_tr.columns if c not in cat_cols]
         pre = ColumnTransformer([
             ("cat", OneHotEncoder(handle_unknown="ignore"), cat_cols),

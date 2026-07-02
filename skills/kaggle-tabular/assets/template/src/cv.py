@@ -11,6 +11,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import GroupKFold, KFold, StratifiedKFold, TimeSeriesSplit
 
+from .device import has_gpu
+
 
 def make_folds(
     df: pd.DataFrame,
@@ -97,9 +99,9 @@ def adversarial_validation(
     y = both.pop("__is_test__").to_numpy()
     X = both
 
-    # encode object columns as categ: LightGBM handles them natively
+    # encode string/object columns as categ: LightGBM handles them natively
     for c in X.columns:
-        if X[c].dtype == object:
+        if pd.api.types.is_string_dtype(X[c]):
             X[c] = X[c].astype("category")
 
     oof = np.zeros(len(X))
@@ -109,6 +111,7 @@ def adversarial_validation(
         m = lgb.LGBMClassifier(
             n_estimators=300, learning_rate=0.05, num_leaves=63,
             subsample=0.8, colsample_bytree=0.8, random_state=seed, verbosity=-1,
+            device_type="gpu" if has_gpu() else "cpu",
         )
         m.fit(X.iloc[tr], y[tr])
         oof[va] = m.predict_proba(X.iloc[va])[:, 1]

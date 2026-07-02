@@ -30,8 +30,9 @@ scale. Pick for both *strength* and *decorrelation* (Phase 6 rewards diversity).
   (see `workflow-phases.md` Phase 5).
 - TabPFN-2.5 hard limits: roughly ≤10k rows and ≤500 features per forward pass; for larger sets,
   subsample (random or K-Means cluster-representative) or skip it as a member.
-- Keep GPU vs CPU consistent with how the repo was scaffolded (`--gpu` toggles RAPIDS/cuDF/cuML and
-  GPU GBDT backends). GPU mainly buys throughput, which buys more experiments.
+- GBDTs use GPU automatically when present (`src/device.py::has_gpu()`); no flag needed. `--gpu` at
+  scaffold time only pins the device, skipping the runtime check. GPU mainly buys throughput, which
+  buys more experiments.
 
 ## Signal-shape heuristics (run before heavy FE)
 

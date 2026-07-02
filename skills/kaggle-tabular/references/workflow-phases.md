@@ -13,7 +13,7 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
 - **Gate:** `just setup` reproduces the env from scratch; raw-data hashes recorded; `COMPETITION.md`
   states the **CV decision** (which fold scheme, and why) as a hypothesis to verify in Phase 1.
 - **Owner:** Setup agent.
-- **Save:** `COMPETITION.md`, env lockfile, data hashes.
+- **Save:** `COMPETITION.md`, env lockfile, data hashes, one line in `PROGRESS.md`.
 
 ## Phase 1 — Build the validation harness FIRST
 - **Goal:** a CV scheme you can trust, the metric implemented, folds frozen.
@@ -27,7 +27,8 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
 - **Gate:** metric reproduces LB to tolerance; folds persisted; adversarial-validation AUC logged;
   `COMPETITION.md` CV decision upgraded from hypothesis to confirmed.
 - **Owner:** Validation Guardian (the role that polices HR-1/HR-2/HR-7 for the rest of the run).
-- **Save:** `src/metric.py`, `data/folds.parquet`, adversarial-validation result.
+- **Save:** `src/metric.py`, `data/folds.parquet`, adversarial-validation result, one line in
+  `PROGRESS.md`.
 
 ## Phase 2 — Smart EDA (beyond table stakes)
 - **Goal:** understand signal, shift, and traps before modeling.
@@ -40,7 +41,7 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
 - **Gate:** `EDA_FINDINGS.md` listing shifted features, leakage suspects, an encoding plan per
   categorical, and 3–5 concrete FE hypotheses for Phase 4.
 - **Owner:** EDA agent (writes and runs its own exploration code; reports back).
-- **Save:** `EDA_FINDINGS.md`, key plots.
+- **Save:** `EDA_FINDINGS.md`, key plots, one line in `PROGRESS.md`.
 
 ## Phase 3 — Diverse baselines (in parallel, no FE yet)
 - **Goal:** map the model landscape; set the bar; expose leakage via sanity.
@@ -52,33 +53,41 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
 - **Gate:** ≥4 baseline families in the ledger with trustworthy CV; the family leaderboard written;
   no family shows impossibly-good CV (leakage check by the Guardian).
 - **Owner:** one baseline agent per family, **in parallel** (embarrassingly parallel, cheap).
-- **Save:** ledger rows, `experiments/baselines.md`.
+- **Save:** ledger rows, `experiments/baselines.md`, one line per family in `PROGRESS.md`.
 
 ## Phase 4 — Feature engineering loop (the main ROI engine)
 - **Goal:** find features that *reliably* lift CV; keep the survivors **per model family**.
 - **Method:** hypothesis-driven first (a reason per feature), then scale where cheap. Run features in
   **groups**; accept a group only if it improves CV beyond fold-noise (compare ΔCV to the family's
   `cv_std`). Full recipes and leak-free encoding in `feature-engineering.md`.
-- **Discipline:** each FE experiment = new `<model>_<ver>`, new OOF + preds, new ledger row, plus a
-  line in `experiments/<model>/NOTES.md` (hypothesis, ΔCV vs fold-noise, kept/dropped, why). Keep
-  **per-family** surviving feature sets — they differ by model, and the diversity feeds Phase 6.
+- **Discipline:** plan first — write `experiments/<model>/specs/NNN_<slug>.md` (hypothesis, expected
+  ΔCV) before implementing. Then implement in `src/feature_engineering/<model>/NNN_<slug>.py` (never
+  inline `python -c`/heredoc code — not auditable, not reproducible), with tunable knobs in
+  `configs/features/<model>/NNN_<slug>.yaml`. Run it via `run_experiment` for a new OOF + preds +
+  ledger row, and log the outcome in `experiments/<model>/NOTES.md` (ΔCV vs fold-noise, kept/dropped,
+  why). Full convention in `feature-engineering.md` → "Artifact discipline". Keep **per-family**
+  surviving feature sets — they differ by model, and the diversity feeds Phase 6.
 - **Gate:** CV plateaus for a family (recent groups within fold-noise) → stop FE for that family.
 - **Owner:** parallel FE-explorer agents, **one per model family**, to keep feature sets diverse.
-- **Save:** ledger rows, `experiments/<model>/NOTES.md`, cached feature frames.
+- **Save:** ledger rows, `experiments/<model>/NOTES.md`, cached feature frames, one line per kept/
+  dropped idea in `PROGRESS.md`.
 
 ## Phase 5 — Model-specific tuning (deliberately light)
 - **Goal:** capture easy tuning gains without overfitting CV or burning the budget.
 - **Reality:** for GBDTs, sensible defaults + **early stopping** capture most of the gain; tuning is
   lower ROI than FE and over-tuning overfits the validation set.
 - **Method:** (1) hand-tune a few high-leverage params by intuition; (2) then a *small* Optuna search
-  over params that move the needle, optimized on the OOF metric under the frozen CV:
+  via `src/optimize/optuna_search.py::tune(...)` — a reusable, config-driven harness (search space in
+  `configs/optimize/<model>.yaml`) that runs trials on the frozen folds without writing per-trial
+  ledger/OOF artifacts (30 throwaway trials shouldn't cost 30 ledger rows); only the winning config
+  is then logged via `run_experiment`. Params worth searching:
   - LightGBM/XGBoost: low `learning_rate` + more rounds + early stopping; `num_leaves`/`max_depth`;
     `min_child_samples`/`min_child_weight`; `feature_fraction`/`colsample_bytree`;
     `bagging_fraction`/`subsample`; L1/L2 (`reg_alpha`/`reg_lambda`).
   - CatBoost: `depth`, `learning_rate`, `l2_leaf_reg`, native categorical handling.
 - **Gate:** tuned CV beats the family's best untuned CV by > fold-noise; else keep the simpler model.
 - **Owner:** tuning agent per family (low-volume, high-judgment — a paid-tier fit).
-- **Save:** ledger rows with frozen tuned configs.
+- **Save:** ledger row with the frozen tuned config, one line in `PROGRESS.md`.
 
 ## Phase 6 — Ensembling (where the competition is actually won)
 - **Goal:** combine diverse strong models into something better than any single one.
@@ -93,7 +102,7 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
 - **Gate:** ensemble OOF beats best single-model OOF by > fold-noise; ensemble spec (members +
   weights / meta-model) saved as a reproducible artifact.
 - **Owner:** ensembler agent (reads the ledger; owns `src/ensemble.py`).
-- **Save:** ensemble spec, ledger row.
+- **Save:** ensemble spec, ledger row, one line in `PROGRESS.md`.
 
 ## Phase 7 — Final-mile strengthening
 - **Goal:** squeeze the last reliable gains and lock submissions.
@@ -103,4 +112,5 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
 - **Gate:** final two submissions chosen **by CV** (see `orchestration.md` → CV–LB contract);
   reproducible end-to-end via `just submit`.
 - **Owner:** ensembler + Validation Guardian jointly.
-- **Save:** final submission files, the exact specs that produced them.
+- **Save:** final submission files, the exact specs that produced them, and a `PROGRESS.md` line per
+  submission (CV, public LB once checked, which hedge it represents).

@@ -19,7 +19,7 @@ TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "template"
 # directories that are created empty (artifacts/data are gitignored; ledger/folds are committed)
 EMPTY_DIRS = [
     "data/raw", "data/processed", "oof", "preds", "experiments", "notebooks",
-    "scripts", "configs/features",
+    "scripts", "configs/features", "src/feature_engineering",
 ]
 
 
@@ -33,32 +33,41 @@ def substitute(path: Path, comp: str) -> None:
 
 
 def enable_gpu(dest: Path) -> None:
-    """Uncomment GPU toggles in the model wrappers (exact commented markers -> live lines)."""
+    """Pin the GPU device in model wrappers (skip the runtime has_gpu() auto-detect)."""
     swaps = {
-        "src/models/lgbm.py": (
-            '        # device_type="gpu",  # uncomment if scaffolded with --gpu',
-            '        device_type="gpu",',
-        ),
-        "src/models/xgb.py": (
-            '        # device="cuda",  # uncomment if scaffolded with --gpu',
-            '        device="cuda",',
-        ),
-        "src/models/cat.py": (
-            '        # task_type="GPU",  # uncomment if scaffolded with --gpu',
-            '        task_type="GPU",',
-        ),
+        "src/models/lgbm.py": [
+            ('        device_type="gpu" if has_gpu() else "cpu",  # auto-detected; --gpu scaffold flag pins "gpu"',
+             '        device_type="gpu",  # pinned by --gpu scaffold flag'),
+            ('from ..device import has_gpu\n\n\n', '\n'),
+        ],
+        "src/models/xgb.py": [
+            ('        device="cuda" if has_gpu() else "cpu",  # auto-detected; --gpu scaffold flag pins "cuda"',
+             '        device="cuda",  # pinned by --gpu scaffold flag'),
+            ('from ..device import has_gpu\n\n\n', '\n'),
+        ],
+        "src/models/cat.py": [
+            ('        task_type="GPU" if has_gpu() else "CPU",  # auto-detected; --gpu scaffold flag pins "GPU"',
+             '        task_type="GPU",  # pinned by --gpu scaffold flag'),
+            ('from ..device import has_gpu\n\n\n', '\n'),
+        ],
     }
-    for rel, (old, new) in swaps.items():
+    for rel, file_swaps in swaps.items():
         p = dest / rel
-        if p.exists():
-            p.write_text(p.read_text().replace(old, new))
+        if not p.exists():
+            continue
+        text = p.read_text()
+        for old, new in file_swaps:
+            text = text.replace(old, new)
+        p.write_text(text)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("comp_name", help="competition slug, e.g. playground-series-s6e3")
     ap.add_argument("--dest", default=".", help="parent directory to create the repo in")
-    ap.add_argument("--gpu", action="store_true", help="default templates to GPU (RAPIDS) backends")
+    ap.add_argument("--gpu", action="store_true",
+                    help="pin GPU device in model wrappers, skipping the runtime auto-detect "
+                         "(GPU is already used automatically when present)")
     args = ap.parse_args()
 
     if not TEMPLATE.exists():

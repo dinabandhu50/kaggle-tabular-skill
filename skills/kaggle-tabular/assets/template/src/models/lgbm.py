@@ -13,6 +13,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from ..device import has_gpu
+
 
 def make_fit_fold(params: dict | None = None, num_boost_round: int = 2000,
                   early_stopping: int = 100, task: str = "classification"):
@@ -23,13 +25,13 @@ def make_fit_fold(params: dict | None = None, num_boost_round: int = 2000,
         learning_rate=0.03, num_leaves=63, feature_fraction=0.8, bagging_fraction=0.8,
         bagging_freq=1, min_child_samples=20, reg_alpha=0.0, reg_lambda=1.0,
         verbosity=-1,
-        # device_type="gpu",  # uncomment if scaffolded with --gpu
+        device_type="gpu" if has_gpu() else "cpu",  # auto-detected; --gpu scaffold flag pins "gpu"
     )
     params = {**default, **(params or {})}
 
     def fit_fold(X_tr: pd.DataFrame, y_tr: np.ndarray, X_val: pd.DataFrame,
                  X_test: pd.DataFrame, fold: int, seed: int):
-        cat_cols = [c for c in X_tr.columns if str(X_tr[c].dtype) in ("object", "category")]
+        cat_cols = [c for c in X_tr.columns if pd.api.types.is_string_dtype(X_tr[c])]
         for c in cat_cols:  # consistent category dtype across splits
             X_tr[c] = X_tr[c].astype("category")
             X_val[c] = X_val[c].astype("category")

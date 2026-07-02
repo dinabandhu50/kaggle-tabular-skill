@@ -5,6 +5,42 @@ it's cheap — combining many simple features often reveals signal models can't 
 features in **groups** and keep a group only if ΔCV exceeds the family's fold-noise (`cv_std`).
 Everything here must obey HR-1 (fit per-fold) and HR-7 (inference-time available).
 
+## Artifact discipline (plan → implementation → config, every idea numbered)
+
+Never explore features with `python -c "..."` or a heredoc — nothing you can't `cat` back later is
+auditable, and an idea that isn't a file is an idea that gets re-run from memory or lost. Every FE
+idea, kept or dropped, is planned *before* it's coded and lands in three places sharing one number:
+
+```
+experiments/<model>/specs/
+  001_group_agg_mean_std.md      # PLAN, written first: hypothesis, expected ΔCV, which cols/aggs
+  002_cat_pair_interactions.md
+  003_oof_target_encoding.md
+experiments/<model>/NOTES.md     # OUTCOME log: one line per number, ΔCV vs cv_std, kept/dropped, why
+src/feature_engineering/<model>/
+  001_group_agg_mean_std.py      # IMPLEMENTATION — kept
+  002_cat_pair_interactions.py   # IMPLEMENTATION — kept
+  003_oof_target_encoding.py     # IMPLEMENTATION — dropped, stays for the record
+configs/features/<model>/
+  001_group_agg_mean_std.yaml    # tunable knobs only (cols, smoothing, agg funcs) — not the logic
+```
+
+- **Plan before you code.** Write the spec (hypothesis, which columns/aggregations, expected effect)
+  in `experiments/<model>/specs/NNN_<slug>.md` first; only then implement it. This is what makes FE
+  hypothesis-driven in practice, not just in principle.
+- **Number strictly increases** for a given model, across kept *and* dropped ideas, and the same
+  number is reused across spec / implementation / config — the triad is the experiment's full record.
+  Never renumber or delete a dropped script; mark it dropped in `NOTES.md` and move on. This is what
+  makes "what did we already try, and in what order" answerable without reading chat history.
+- **Implementation lives in `src/feature_engineering/`, not `scripts/` or `experiments/`** — it's
+  reusable library code, not a one-off. Each file imports shared logic from `src/features.py` (see
+  "Encoding cheatsheet" below) and exposes one small transform, e.g.
+  `apply(X_tr, y_tr, X_val, X_test) -> (X_tr, X_val, X_test)`, called from the model's `fit_fold`.
+- If a script has tunable parameters, they live in `configs/features/<model>/NNN_<slug>.yaml` and the
+  script loads them — keeps the code generic and the run reproducible from the config alone (HR-6).
+- `experiments/<model>/specs/`, `src/feature_engineering/<model>/`, and `configs/features/<model>/`
+  are all committed to git; together they're the audit trail, same spirit as the ledger.
+
 ## High-yield families (roughly ordered by typical ROI on tabular)
 
 1. **Aggregations / group statistics (highest ROI).**
@@ -95,3 +131,4 @@ and the Guardian confirms HR-1/HR-7. Otherwise drop it and record why in
 | Target encoding fit outside the fold | inflated CV that doesn't generalize (HR-1) |
 | Blind FE with no hypothesis | signal-to-noise degradation |
 | FE before CV is trustworthy | building on sand |
+| `python -c`/heredoc feature exploration | not auditable, not reproducible, lost after the shell exits |

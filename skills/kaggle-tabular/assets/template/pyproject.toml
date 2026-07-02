@@ -16,13 +16,14 @@ dependencies = [
     "pyyaml",
     "matplotlib",
     "wandb",
+    "tqdm",
     # small-data foundation model + automl (optional but recommended diversity):
     # "tabpfn",
     # "autogluon.tabular",
 ]
 
-# GPU note: if scaffolded with --gpu, install the RAPIDS stack (cudf-cu12, cuml-cu12) per your
-# CUDA version and enable device_type="gpu" in the model wrappers.
+# GPU note: GBDT wrappers auto-detect CUDA via src/device.py and use it when present, no flag
+# needed. For the RAPIDS stack (cudf-cu12, cuml-cu12) install per your CUDA version separately.
 
 [tool.uv]
 package = false

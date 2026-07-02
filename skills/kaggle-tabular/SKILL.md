@@ -90,23 +90,63 @@ Do not heavily tune before FE has plateaued.
 - **HR-7** No leakage features: every feature must be computable at inference time using only
   information available before the prediction moment.
 
+## Engineering conventions (cross-phase, non-negotiable)
+
+- **No throwaway code.** Never explore or produce a result with `python -c "..."` or a heredoc — if
+  it isn't a file, it isn't auditable and it isn't reproducible. Every FE idea is planned first
+  (`experiments/<model>/specs/NNN_<slug>.md`), then implemented in
+  `src/feature_engineering/<model>/NNN_<slug>.py`, with tunable knobs in
+  `configs/features/<model>/NNN_<slug>.yaml` (see `references/feature-engineering.md` → "Artifact
+  discipline").
+- **`scripts/` is for standalone utilities only** (download, make_folds, adversarial, eda, baseline,
+  fe, tune, ensemble, submit, audit, summary) — never put feature-engineering logic there; it lives in
+  `src/feature_engineering/`.
+- **Reuse, don't re-derive.** Phase scripts are thin CLI wrappers over the `src/` library — call
+  `run_experiment`, `src/features.py` / `src/feature_engineering/` helpers, `src/optimize/`, and
+  `src/ensemble.py`, don't reimplement CV loops, encoders, or Optuna boilerplate inline. This is also
+  what keeps token spend down across a long competition.
+- **Track progress.** After every kept/rejected experiment and every submission, append one terse
+  line to `PROGRESS.md` (what, result, kept/dropped/why) — the running record of what not to repeat.
+- **wandb is optional, the ledger is not.** `run_experiment` logs to wandb only if `WANDB_PROJECT` is
+  set (`src/tracking.py`); set `WANDB_MODE=disabled` if it's slowing runs down. The ledger is the
+  durable record either way (HR-4).
+- **GPU by default.** `src/device.py::has_gpu()` auto-detects CUDA and the GBDT wrappers use it
+  without needing a flag; `--gpu` at scaffold time only *pins* GPU (skips the runtime check).
+- **Parallelize independent experiments across subagents.** Baselines (Phase 3) and per-family FE
+  loops (Phase 4) are embarrassingly parallel — dispatch one subagent per model family rather than
+  running them serially. See `references/orchestration.md`.
+- **Visible progress.** Long-running training shows a fold-level progress bar with elapsed/ETA
+  (wired into `run_experiment`); parallel agents log a one-line start/finish per experiment so
+  progress across concurrent runs is legible.
+- **Pragmatic, terse code.** No file-header docstrings or comments explaining what code obviously
+  does; write comments only for a non-obvious constraint (e.g. *why* a transform must be in-fold).
+
 ## What the scaffold gives you
 
 After `scaffold_competition.py`, the repo contains working template code (in `src/`) that *encodes*
 the rules so agents can't easily violate them:
 
+- `src/device.py` — `has_gpu()` runtime CUDA auto-detect; GBDT wrappers use it so GPU is the default
+  whenever it's present, no flag required.
 - `src/cv.py` — fold generation (stratified / group / time) + **adversarial validation**.
 - `src/metric.py` — competition-metric registry + CV scorer (fill in the exact metric, HR-3).
 - `src/ledger.py` — append-only experiment ledger (the agent-coordination layer).
+- `src/tracking.py` — optional wandb logging (`log_run`), off unless `WANDB_PROJECT` is set; never
+  the source of truth, so a wandb failure can't block a run.
 - `src/models/base.py` — `run_experiment(...)` that loads the frozen folds, runs CV, saves
   `oof/` + `preds/`, and appends a ledger row. **Using this is how HR-2/HR-4 are enforced.**
 - `src/ensemble.py` — hill climbing + stacking over the OOF ledger.
 - `src/features.py` — leak-safe FE helpers (in-fold target/frequency encoding, ALL_CATS, quantile
   bins, digit features, categorical interactions) — call these INSIDE `fit_fold` (HR-1).
+- `src/feature_engineering/` — starts empty; agents fill it with numbered, per-model FE
+  implementations (Phase 4) built on `src/features.py`. See `references/feature-engineering.md`.
+- `src/optimize/optuna_search.py` — reusable, config-driven Optuna harness for Phase 5 (see
+  `references/workflow-phases.md` → Phase 5). Trials run CV internally without writing ledger/OOF
+  artifacts; only the winning config is logged via `run_experiment`.
 - `src/finalize.py` — Phase-7 full-data refit at 1.25× best_iteration over many seeds.
 - `src/models/{lgbm,xgb,cat,logreg}.py` — four ready `fit_fold` wrappers; `logreg.py` is also the
   Phase-2 linearity probe.
-- `justfile`, `configs/`, `AGENTS.md`, `COMPETITION.md`.
+- `justfile`, `configs/`, `AGENTS.md`, `COMPETITION.md`, `PROGRESS.md`.
 
 Agents should build every model through `run_experiment(...)` rather than hand-rolling CV loops.
 

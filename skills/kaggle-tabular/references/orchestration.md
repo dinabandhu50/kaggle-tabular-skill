@@ -67,6 +67,18 @@ that produced an experiment also be the one that certifies it `kept`.
 
 ## Throughput note
 
-The biggest lever is the number of high-quality experiments. Keep FE-loop models fast (LightGBM,
-GPU backends if scaffolded with `--gpu`), run baselines and FE-explorers in parallel, and let the
+The biggest lever is the number of high-quality experiments. Keep FE-loop models fast (LightGBM;
+GPU is used automatically when present via `src/device.py::has_gpu()` — no flag needed), run
+baselines and FE-explorers in parallel across subagents (one per model family), and let the
 append-only ledger absorb the concurrency.
+
+## Progress transparency for parallel agents
+
+With several agents training concurrently, make progress legible without reading full logs:
+
+- `run_experiment` already shows a per-fold `tqdm` bar with running score — don't silence it.
+- Each agent prints one line when an experiment starts (`exp_id`, model family, fold count) and one
+  when it finishes (final CV, elapsed time), so a human tailing several panes can tell what's running
+  and roughly how long it'll take without opening each log.
+- Prefer this over a spinner with no information — the useful signal is *which* experiment, *how far
+  along*, and *what score so far*.
