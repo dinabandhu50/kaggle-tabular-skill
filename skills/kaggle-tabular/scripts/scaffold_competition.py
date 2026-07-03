@@ -20,6 +20,7 @@ TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "template"
 EMPTY_DIRS = [
     "data/raw", "data/processed", "oof", "preds", "experiments", "notebooks",
     "scripts", "configs/features", "src/feature_engineering",
+    "localdev/tmp", "localdev/logs", "localdev/external",
 ]
 
 

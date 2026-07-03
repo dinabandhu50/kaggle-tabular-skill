@@ -14,7 +14,7 @@ This repo is **root-is-plugin** (same layout as [superpowers](https://github.com
 | `skills/kaggle-tabular/SKILL.md` | The router: philosophy, ROI order, HR-1…HR-7, the 8-phase gated workflow |
 | `skills/kaggle-tabular/references/` | On-demand detail per phase (hard-rules, workflow-phases, feature-engineering, model-menu, ensembling, orchestration, what-works) |
 | `skills/kaggle-tabular/scripts/scaffold_competition.py` | Scaffolds a `comp-<name>/` repo that encodes the rules |
-| `skills/kaggle-tabular/assets/template/` | The competition template: `run_experiment` OOF keystone, append-only ledger, frozen folds, leak-safe `features.py`, a reusable Optuna harness (`src/optimize/`), GPU auto-detect (`src/device.py`), optional wandb logging (`src/tracking.py`), `ensemble.py`, `finalize.py`, `lgbm`/`xgb`/`cat`/`logreg` wrappers, and `PROGRESS.md` |
+| `skills/kaggle-tabular/assets/template/` | The competition template: `run_experiment` OOF keystone, append-only ledger, frozen folds, leak-safe `features.py`, a reusable Optuna harness (`src/optimize/`), GPU auto-detect (`src/device.py`), optional wandb logging (`src/tracking.py`), `ensemble.py`, `finalize.py`, `lgbm`/`xgb`/`cat`/`logreg` wrappers, `PROGRESS.md`, and `localdev/` scratch space (`tmp/`, `logs/`, and committed `external/` notes from the competition's own Discussion/Code pages) |
 | `.claude-plugin/` · `.codex-plugin/` · `.opencode/` | Per-harness manifests |
 | `learnings/` | Research: distilled top-solution write-ups + the refined pipeline (not shipped as part of the skill) |
 

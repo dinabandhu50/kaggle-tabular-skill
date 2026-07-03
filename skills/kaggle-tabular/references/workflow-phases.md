@@ -9,9 +9,12 @@ until the gate is met and the result is logged. Bold phases (1, 4, 6) are where 
 - **Goal:** reproducible env + raw data on disk + competition facts captured.
 - **Actions:** create the `uv` env; download data via the Kaggle API into `data/raw/`; write
   `COMPETITION.md` capturing task type, the **exact** metric, row/column counts, target format,
-  group/time structure, submission format, daily submission limit, and timeline.
+  group/time structure, submission format, daily submission limit, and timeline. Ask the user for
+  the competition's Overview, Discussion, and Code URLs and record them in `COMPETITION.md` —
+  see `orchestration.md` → "External intel gathering" for how these get mined periodically.
 - **Gate:** `just setup` reproduces the env from scratch; raw-data hashes recorded; `COMPETITION.md`
-  states the **CV decision** (which fold scheme, and why) as a hypothesis to verify in Phase 1.
+  states the **CV decision** (which fold scheme, and why) as a hypothesis to verify in Phase 1; the
+  three external links are recorded (or explicitly noted as unavailable).
 - **Owner:** Setup agent.
 - **Save:** `COMPETITION.md`, env lockfile, data hashes, one line in `PROGRESS.md`.
 

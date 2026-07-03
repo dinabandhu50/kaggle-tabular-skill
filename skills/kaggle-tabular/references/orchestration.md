@@ -16,6 +16,7 @@ this is what makes parallelism safe and the ensembler decoupled.
 | **Tuning agents** | small, careful Optuna per family | low, high-judgment | paid |
 | **Ensembler** | hill climbing, stacking, distillation over the ledger | medium | paid |
 | **Summarizer** | "what's working" reports from the ledger | medium | free |
+| **Kaggle Intel agent** | periodic web search of the competition's Overview/Discussion/Code pages; writes `localdev/external/*.md` | low, recurring | free |
 
 This mirrors a Generator/Evaluator split with an adversarial critic: the **Validation Guardian** is
 the critic whose whole job is to stop the CV score from being hacked via leakage. Never let the agent
@@ -29,6 +30,62 @@ that produced an experiment also be the one that certifies it `kept`.
 - The summarizer answers "what's working?" by querying the ledger.
 - Every model is built through `src/models/base.py::run_experiment(...)`, which enforces HR-2
   (frozen folds) and HR-4 (artifacts + ledger row) by construction.
+
+## Daily experiment planning cadence
+
+Don't front-load a full competition plan — each batch's results tell you what the next batch should
+test. Work in small, verifiable batches, one per session/day: plan the batch, spec each experiment,
+execute (in parallel where possible), verify, then let the results pick the next batch — the same
+plan-before-code discipline the rest of this skill applies to code, applied here to experiments.
+(If you're running in Claude Code with the `superpowers` plugin installed, this cadence maps
+directly onto its `brainstorming` → `writing-plans` → `subagent-driven-development` skills — use
+them if available, but nothing here depends on it.)
+
+1. **Review state.** Read `PROGRESS.md`, the ledger's recent rows, and any new notes in
+   `localdev/external/` (see "External intel gathering" below) to see what's already been tried and
+   what's still open.
+2. **Pick a small batch of hypotheses.** 2–4 ideas that fit the *current* phase (see
+   `workflow-phases.md`) and are cheap enough to evaluate within the session — not a backlog for the
+   whole competition. Prefer ideas with a stated reason to fail fast on bad ones.
+3. **Spec each one before touching code.** FE ideas get `experiments/<model>/specs/NNN_<slug>.md`
+   (see `feature-engineering.md` → "Artifact discipline"); tuning/ensembling ideas get an equivalent
+   short spec (what's being tried, expected effect, how it'll be judged) saved next to their output.
+4. **Dispatch.** Where experiments are independent (different model families, different FE groups),
+   run one subagent per experiment in parallel rather than serially — see the role map above.
+5. **Verify.** Each experiment must go through `run_experiment` (OOF + preds + ledger row, HR-4) and
+   the Validation Guardian audit (`hard-rules.md`) before being marked `kept`. Compare ΔCV to
+   `cv_std`, not to zero.
+6. **Decide the next batch from evidence.** Update `PROGRESS.md`, commit (see `SKILL.md` →
+   "Commit at meaningful steps"), and let what worked/failed — plus anything new in
+   `localdev/external/` — drive the next batch's hypotheses. Don't plan batch N+2 before batch N's
+   results are in.
+
+## External intel gathering
+
+Other competitors' write-ups routinely shortcut hours of independent discovery — treat the
+competition's own Discussion and Code (public notebooks) tabs as a data source, not just the raw
+train/test files.
+
+- **At Phase 0**, ask the user for the competition's **Overview**, **Discussion**, and **Code**
+  URLs and record them in `COMPETITION.md`. If the user doesn't have them handy, ask again before
+  the first FE batch — it's worth the pause.
+- **Periodically** (a reasonable default is once per session/day, or whenever a batch's results are
+  surprising and external context might explain why) search the web for and read those pages for
+  new ideas, reported pitfalls, and public LB chatter — use whatever browsing/search capability the
+  harness provides, or ask the user to paste key threads if it has none. Synthesize findings into a
+  dated or slug-named file under `localdev/external/` (e.g.
+  `localdev/external/2026-07-03-discussion-notes.md`) — don't just dump raw search results; extract
+  what's actionable (a feature idea, a CV pitfall, a model that's working for others) and note
+  whether it's been tried yet.
+- **Feed it into planning**, not straight into code: a promising idea from `localdev/external/`
+  becomes a hypothesis in the next batch (step 2 above) with its own spec, same as an internally
+  generated idea — it still has to earn its keep against `cv_std` and pass the Guardian audit. Public
+  notebooks' reported CV/LB numbers are not a substitute for your own.
+- `localdev/external/` is scratch research for *this* competition's repo — it has no access to and
+  makes no reference to the kaggle-tabular skill's own source repo. If a technique proves broadly
+  useful beyond this one competition, that's a call for the human running the competition to carry
+  forward manually (e.g. into their own cross-competition notes), not something this repo's agents
+  can or should do on their own.
 
 ## Drop-in agent prompt patterns
 

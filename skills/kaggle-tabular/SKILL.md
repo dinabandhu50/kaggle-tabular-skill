@@ -92,12 +92,16 @@ Do not heavily tune before FE has plateaued.
 
 ## Engineering conventions (cross-phase, non-negotiable)
 
-- **No throwaway code.** Never explore or produce a result with `python -c "..."` or a heredoc — if
-  it isn't a file, it isn't auditable and it isn't reproducible. Every FE idea is planned first
-  (`experiments/<model>/specs/NNN_<slug>.md`), then implemented in
-  `src/feature_engineering/<model>/NNN_<slug>.py`, with tunable knobs in
+- **No throwaway code for anything that drives a decision.** Never explore FE, modeling, or
+  ensembling ideas with `python -c "..."` or a heredoc — if it isn't a file, it isn't auditable and
+  it isn't reproducible. Every FE idea is planned first (`experiments/<model>/specs/NNN_<slug>.md`),
+  then implemented in `src/feature_engineering/<model>/NNN_<slug>.py`, with tunable knobs in
   `configs/features/<model>/NNN_<slug>.yaml` (see `references/feature-engineering.md` → "Artifact
-  discipline").
+  discipline"). `python -c` is fine only for a truly disposable, test-and-forget check (e.g. "what
+  dtype does this column load as"). Anything you'd want to re-run or reference later goes in
+  `localdev/tmp/*.py` instead of a one-liner, and command output/logs worth keeping go through
+  `localdev/logs/` (e.g. `python localdev/tmp/check_x.py 2>&1 | tee -a localdev/logs/check_x.log`).
+  `localdev/` is scratch space outside the OOF contract — nothing there is an experiment artifact.
 - **`scripts/` is for standalone utilities only** (download, make_folds, adversarial, eda, baseline,
   fe, tune, ensemble, submit, audit, summary) — never put feature-engineering logic there; it lives in
   `src/feature_engineering/`.
@@ -107,6 +111,16 @@ Do not heavily tune before FE has plateaued.
   what keeps token spend down across a long competition.
 - **Track progress.** After every kept/rejected experiment and every submission, append one terse
   line to `PROGRESS.md` (what, result, kept/dropped/why) — the running record of what not to repeat.
+- **Commit at meaningful steps, not just at session end.** Small, frequent commits keep the ledger,
+  OOF artifacts, and narrative in sync and make the history itself a readable log of the competition.
+  Commit after: a new FE group or model variant (`feat: add domain FE group v7 (sleep/bmi/hr
+  deviations)`), an ensemble analysis or notable experiment result (`exp: hillclimb_infold
+  cv=0.95015`), a bug fix (`fix: missing indicator always emits column on transform`), and a
+  `PROGRESS.md` update (`docs: day 3 results + discussion insights`). Use the prefix that matches
+  the change (`feat` / `exp` / `fix` / `docs`); commit the code together with the artifacts/docs it
+  produced (ledger row, NOTES.md line, PROGRESS.md line) rather than splitting them across commits.
+- **Plan before executing, in small verifiable batches.** See `references/orchestration.md` → "Daily
+  experiment planning cadence" for the plan → spec → dispatch → verify → decide-next loop.
 - **wandb is optional, the ledger is not.** `run_experiment` logs to wandb only if `WANDB_PROJECT` is
   set (`src/tracking.py`); set `WANDB_MODE=disabled` if it's slowing runs down. The ledger is the
   durable record either way (HR-4).
@@ -120,6 +134,11 @@ Do not heavily tune before FE has plateaued.
   progress across concurrent runs is legible.
 - **Pragmatic, terse code.** No file-header docstrings or comments explaining what code obviously
   does; write comments only for a non-obvious constraint (e.g. *why* a transform must be in-fold).
+- **Mine the competition's own community.** Ask the user for the competition's Overview, Discussion,
+  and Code (public notebooks) URLs at Phase 0 (record in `COMPETITION.md`), then periodically search
+  and read them, writing synthesized notes to `localdev/external/*.md` — other competitors' ideas and
+  pitfalls routinely shortcut hours of independent discovery. See `references/orchestration.md` →
+  "External intel gathering".
 
 ## What the scaffold gives you
 
@@ -147,6 +166,11 @@ the rules so agents can't easily violate them:
 - `src/models/{lgbm,xgb,cat,logreg}.py` — four ready `fit_fold` wrappers; `logreg.py` is also the
   Phase-2 linearity probe.
 - `justfile`, `configs/`, `AGENTS.md`, `COMPETITION.md`, `PROGRESS.md`.
+- `localdev/{tmp,logs,external}` — scratch space outside the OOF contract: `tmp/` for disposable
+  exploration scripts (instead of `python -c`), `logs/` for captured stdout, `external/` for notes
+  distilled from the competition's Discussion/Code pages. `tmp/` and `logs/` are gitignored;
+  `external/` is committed — it's cheap, durable research value, unlike the disposable scratch
+  around it.
 
 Agents should build every model through `run_experiment(...)` rather than hand-rolling CV loops.
 
@@ -164,8 +188,9 @@ Agents should build every model through `run_experiment(...)` rather than hand-r
 - `references/model-menu.md` — 2026 model selection (GBDTs vs TabPFN-2.5 vs AutoGluon vs diversity
   members) and when each wins. **Read in Phase 3.**
 - `references/orchestration.md` — multi-agent role map (incl. the adversarial Validation Guardian),
-  drop-in agent prompt patterns, filesystem-based coordination, and the CV–LB contract for final
-  submission selection. **Read when planning parallel agents or selecting final submissions.**
+  drop-in agent prompt patterns, filesystem-based coordination, the daily experiment planning
+  cadence, external intel gathering, and the CV–LB contract for final submission selection. **Read
+  when planning parallel agents, starting a new batch of work, or selecting final submissions.**
 - `references/what-works.md` — evidence-backed cross-cutting patterns and the "what does NOT work"
   table. **Load for a fast prior before committing effort in any phase.**
 

@@ -30,3 +30,8 @@ Single source of truth for competition facts. Fill in during Phase 0; upgrade th
 - Final submissions to select: 2 (by CV — see references/orchestration.md)
 - Deadline: <...>
 - External data allowed? <...>   Pseudo-labeling on test allowed? <...>
+
+## External links (for periodic intel gathering — see references/orchestration.md)
+- Overview: <url>
+- Discussion: <url>
+- Code (public notebooks): <url>

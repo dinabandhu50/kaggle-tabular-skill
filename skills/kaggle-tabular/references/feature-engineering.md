@@ -8,8 +8,11 @@ Everything here must obey HR-1 (fit per-fold) and HR-7 (inference-time available
 ## Artifact discipline (plan → implementation → config, every idea numbered)
 
 Never explore features with `python -c "..."` or a heredoc — nothing you can't `cat` back later is
-auditable, and an idea that isn't a file is an idea that gets re-run from memory or lost. Every FE
-idea, kept or dropped, is planned *before* it's coded and lands in three places sharing one number:
+auditable, and an idea that isn't a file is an idea that gets re-run from memory or lost. If you need
+to poke at the data first (check a dtype, eyeball a distribution) before committing to a hypothesis,
+that's what `localdev/tmp/` is for (see `SKILL.md` → engineering conventions) — but the moment an
+idea is worth testing against CV, it graduates to a numbered spec. Every FE idea, kept or dropped, is
+planned *before* it's coded and lands in three places sharing one number:
 
 ```
 experiments/<model>/specs/

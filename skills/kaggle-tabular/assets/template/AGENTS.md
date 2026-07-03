@@ -26,10 +26,13 @@ Do not heavily tune before FE has plateaued. Ensembling is where the leaderboard
 
 ## Engineering conventions
 
-- **No throwaway code.** Never use `python -c "..."` or a heredoc for anything that produces a
-  result you'll rely on. Every FE idea is planned first (`experiments/<model>/specs/NNN_<slug>.md`),
-  then implemented in `src/feature_engineering/<model>/NNN_<slug>.py`, with tunable knobs in
+- **No throwaway code for anything that drives a decision.** Never use `python -c "..."` or a
+  heredoc for FE/modeling/ensembling exploration. Every FE idea is planned first
+  (`experiments/<model>/specs/NNN_<slug>.md`), then implemented in
+  `src/feature_engineering/<model>/NNN_<slug>.py`, with tunable knobs in
   `configs/features/<model>/NNN_<slug>.yaml` — see the skill's `references/feature-engineering.md`.
+  `python -c` is fine only for a tiny test-and-forget check. Anything worth keeping goes in
+  `localdev/tmp/*.py`; captured output/logs go through `localdev/logs/`.
 - **`scripts/` is standalone utilities only** (download, folds, adversarial, eda, baseline, fe, tune,
   ensemble, submit, audit, summary) — no feature-engineering logic there; that's
   `src/feature_engineering/`.
@@ -44,6 +47,16 @@ Do not heavily tune before FE has plateaued. Ensembling is where the leaderboard
   `run_experiment`); long-running agents print one line per experiment start/finish.
 - **Track progress.** After every kept/rejected experiment and every submission, append one terse
   line to `PROGRESS.md`.
+- **Commit at meaningful steps.** After a new FE group/model variant (`feat: ...`), an ensemble
+  analysis or notable result (`exp: ...`), a bug fix (`fix: ...`), or a `PROGRESS.md` update
+  (`docs: ...`) — see the skill's `SKILL.md` → "Commit at meaningful steps" for the full convention.
+- **Plan before executing, in small batches.** See the skill's `references/orchestration.md` →
+  "Daily experiment planning cadence": review state, pick a small batch of hypotheses, spec each one,
+  dispatch subagents in parallel where independent, verify against `cv_std` + the Guardian audit,
+  then decide the next batch from evidence.
+- **Mine the competition's own community.** Overview/Discussion/Code URLs live in `COMPETITION.md`;
+  periodically search the web for them and write notes to `localdev/external/*.md` — see
+  `references/orchestration.md` → "External intel gathering".
 - **Terse code.** No file-header docstrings restating what the code does; comment only a non-obvious
   constraint.
 
@@ -64,5 +77,11 @@ Do not heavily tune before FE has plateaued. Ensembling is where the leaderboard
 
 ## Competition facts
 
-See `COMPETITION.md` (task, exact metric, CV decision, submission limit, deadlines). See
-`PROGRESS.md` for the running log of what's been tried, kept, dropped, and submitted.
+See `COMPETITION.md` (task, exact metric, CV decision, submission limit, deadlines, external links).
+See `PROGRESS.md` for the running log of what's been tried, kept, dropped, and submitted.
+
+## Scratch space
+
+`localdev/tmp/` (disposable scripts), `localdev/logs/` (captured output), `localdev/external/`
+(notes distilled from the competition's Discussion/Code pages — committed; `tmp/` and `logs/` are
+not). None of it is part of the OOF contract.

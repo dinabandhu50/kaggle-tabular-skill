@@ -8,6 +8,11 @@ wandb/
 # but DO commit the ledger and folds — they are the memory of the run
 !experiments/ledger.parquet
 !data/folds.parquet
+# local scratch (not part of the OOF contract)
+localdev/tmp/
+localdev/logs/
+# but DO commit external intel notes — cheap, durable research value
+!localdev/external/
 # env / secrets
 .venv/
 .envrc.local
