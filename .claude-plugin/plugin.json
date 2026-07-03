@@ -1,6 +1,6 @@
 {
   "name": "kaggle-tabular",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Grandmaster-grade, validation-first workflow for solo tabular Kaggle competitions: leakage hard-rules, a gated 8-phase loop, an OOF artifact contract, a scaffolder + rule-encoding template, and multi-agent orchestration. Cross-harness (Claude Code / Codex / OpenCode).",
   "author": { "name": "Dinabandhu Behera" },
   "keywords": ["kaggle", "tabular", "cross-validation", "feature-engineering", "ensembling", "gbdt", "competition"]
